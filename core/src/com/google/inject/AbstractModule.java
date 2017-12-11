@@ -19,6 +19,7 @@ package com.google.inject;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.AnnotatedConstantBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
@@ -76,6 +77,16 @@ public abstract class AbstractModule implements Module {
   /** @see Binder#bindScope(Class, Scope) */
   protected void bindScope(Class<? extends Annotation> scopeAnnotation, Scope scope) {
     binder().bindScope(scopeAnnotation, scope);
+  }
+
+  protected <T> void bind(Object source, Key<T> key, ImmutableList<Key<?>> deps, ComponentBuilder<T> p) {
+    binder().bind(source, key, deps, p);
+  }
+  protected <T> void bind(Object source, Key<T> key, ImmutableList<Key<?>> deps, ComponentBuilder<T> p, Scope scope) {
+    binder().bind(source, key, deps, p, scope);
+  }
+  protected <T> void bind(Object source, Key<T> key, ImmutableList<Key<?>> deps, ComponentBuilder<T> p, Class<? extends Annotation> scopeAnnotation) {
+    binder().bind(source, key, deps, p, scopeAnnotation);
   }
 
   /** @see Binder#bind(Key) */

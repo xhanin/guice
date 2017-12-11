@@ -32,6 +32,12 @@ public interface BindingTargetVisitor<T, V> {
   V visit(InstanceBinding<? extends T> binding);
 
   /**
+   * Visit a component def binding. The component def builder's {@code get} method is invoked to
+   * create instances. This target is found in both module and injector bindings.
+   */
+  V visit(ComponentDefBinding<? extends T> binding);
+
+  /**
    * Visit a provider instance binding. The provider's {@code get} method is invoked to resolve
    * injections. This target is found in both module and injector bindings.
    */

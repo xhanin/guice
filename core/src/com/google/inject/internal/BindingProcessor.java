@@ -16,12 +16,17 @@
 
 package com.google.inject.internal;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Binder;
 import com.google.inject.Binding;
+import com.google.inject.ComponentAccessor;
+import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Provider;
+import com.google.inject.spi.ComponentDefBinding;
 import com.google.inject.spi.ConstructorBinding;
 import com.google.inject.spi.ConvertedConstantBinding;
+import com.google.inject.spi.Dependency;
 import com.google.inject.spi.ExposedBinding;
 import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.InstanceBinding;
@@ -30,7 +35,9 @@ import com.google.inject.spi.PrivateElements;
 import com.google.inject.spi.ProviderBinding;
 import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderKeyBinding;
+import com.google.inject.spi.ProviderWithDependencies;
 import com.google.inject.spi.UntargettedBinding;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -108,6 +115,57 @@ final class BindingProcessor extends AbstractBindingProcessor {
             putBinding(
                 new InstanceBindingImpl<T>(
                     injector, key, source, scopedFactory, injectionPoints, instance));
+            return true;
+          }
+
+          @Override
+          public Boolean visit(final ComponentDefBinding<? extends T> binding) {
+            prepareBinding();
+            @SuppressWarnings("unchecked")
+            final Injector inj = BindingProcessor.this.injector;
+            Set<Key<?>> keysBuilder = new LinkedHashSet<>();
+            for (Dependency<?> dependency : binding.getDependencies()) {
+              keysBuilder.add(dependency.getKey());
+            }
+            final Set<Key<?>> keys = ImmutableSet.copyOf(keysBuilder);
+
+            final ProviderWithDependencies<? extends T> provider = new ProviderWithDependencies<T>() {
+              @Override
+              public Set<Dependency<?>> getDependencies() {
+                return binding.getDependencies();
+              }
+
+              @Override
+              public T get() {
+                return binding.getComponentDef().getBuilder().get(new ComponentAccessor() {
+                  @Override
+                  public Set<Key<?>> getKeys() {
+                    return keys;
+                  }
+
+                  @Override
+                  public <T> Provider<T> getProvider(Key<T> key) {
+                    if (!keys.contains(key)) {
+                      throw new IllegalArgumentException("invalid key: " + key + " only declared dependencies can be used.");
+                    }
+                    return inj.getProvider(key);
+                  }
+                });
+              }
+            };
+            InternalFactory<T> factory =
+                    new InternalFactory<T>() {
+                      @Override
+                      public T get(Errors errors, InternalContext context, Dependency<?> dependency, boolean linked) throws ErrorsException {
+                        return provider.get();
+                      }
+                    };
+            InternalFactory<? extends T> scopedFactory =
+                    Scoping.scope(key, injector, factory, source, scoping);
+            putBinding(
+                    new ProviderInstanceBindingImpl<T>(
+                            injector, key, source, scopedFactory, scoping, provider,
+                            ImmutableSet.<InjectionPoint>of()));
             return true;
           }
 

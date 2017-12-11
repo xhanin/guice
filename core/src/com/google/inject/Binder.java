@@ -16,6 +16,7 @@
 
 package com.google.inject;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.AnnotatedConstantBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
@@ -208,6 +209,10 @@ public interface Binder {
 
   /** Binds a scope to an annotation. */
   void bindScope(Class<? extends Annotation> annotationType, Scope scope);
+
+  <T> void bind(Object source, Key<T> key, ImmutableList<Key<?>> deps, ComponentBuilder<T> p);
+  <T> void bind(Object source, Key<T> key, ImmutableList<Key<?>> deps, ComponentBuilder<T> p, Scope scope);
+  <T> void bind(Object source, Key<T> key, ImmutableList<Key<?>> deps, ComponentBuilder<T> p, Class<? extends Annotation> scopeAnnotation);
 
   /** See the EDSL examples at {@link Binder}. */
   <T> LinkedBindingBuilder<T> bind(Key<T> key);

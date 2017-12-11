@@ -40,6 +40,11 @@ public abstract class DefaultBindingTargetVisitor<T, V> implements BindingTarget
   }
 
   @Override
+  public V visit(ComponentDefBinding<? extends T> binding) {
+    return visitOther(binding);
+  }
+
+  @Override
   public V visit(ProviderInstanceBinding<? extends T> providerInstanceBinding) {
     return visitOther(providerInstanceBinding);
   }
